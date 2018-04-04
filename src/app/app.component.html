@@ -1,20 +1,79 @@
-<!--The content below is only a placeholder and can be replaced.-->
-<div style="text-align:center">
-  <h1>
-    Welcome to {{ title }}!
-  </h1>
-  <img width="300" alt="Angular Logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTAgMjUwIj4KICAgIDxwYXRoIGZpbGw9IiNERDAwMzEiIGQ9Ik0xMjUgMzBMMzEuOSA2My4ybDE0LjIgMTIzLjFMMTI1IDIzMGw3OC45LTQzLjcgMTQuMi0xMjMuMXoiIC8+CiAgICA8cGF0aCBmaWxsPSIjQzMwMDJGIiBkPSJNMTI1IDMwdjIyLjItLjFWMjMwbDc4LjktNDMuNyAxNC4yLTEyMy4xTDEyNSAzMHoiIC8+CiAgICA8cGF0aCAgZmlsbD0iI0ZGRkZGRiIgZD0iTTEyNSA1Mi4xTDY2LjggMTgyLjZoMjEuN2wxMS43LTI5LjJoNDkuNGwxMS43IDI5LjJIMTgzTDEyNSA1Mi4xem0xNyA4My4zaC0zNGwxNy00MC45IDE3IDQwLjl6IiAvPgogIDwvc3ZnPg==">
+<div *ngIf="!(authService.user | async)" fxLayout="column" class="login-container" fxLayoutGap="20px" fxLayoutAlign="center center"
+  (keyup.enter)="login()">
+  <h1>Migraine Tracker</h1>
+  <div *ngIf="loginFailed === true" class="login-failed">
+    Login failed
+  </div>
+  <mat-form-field>
+    <input matInput type="text" [(ngModel)]="email" placeholder="Email" required>
+  </mat-form-field>
+  <mat-form-field>
+    <input matInput type="password" [(ngModel)]="password" placeholder="Password" required>
+  </mat-form-field>
+  <div fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="50px">
+    <button mat-raised-button color="primary" (click)="login()" [disabled]="!email || !password">
+      Login
+    </button>
+  </div>
 </div>
-<h2>Here are some links to help you start: </h2>
-<ul>
-  <li>
-    <h2><a target="_blank" rel="noopener" href="https://angular.io/tutorial">Tour of Heroes</a></h2>
-  </li>
-  <li>
-    <h2><a target="_blank" rel="noopener" href="https://github.com/angular/angular-cli/wiki">CLI Documentation</a></h2>
-  </li>
-  <li>
-    <h2><a target="_blank" rel="noopener" href="https://blog.angular.io/">Angular blog</a></h2>
-  </li>
-</ul>
 
+<div fxLayout="column" class="main-container" *ngIf="authService.user | async">
+  <div class='header'>
+    <div fxLayout="row" fxLayoutAlign="end center">
+      <button mat-raised-button color="warn" (click)="logout()" *ngIf="authService.user | async">Logout</button>
+    </div>
+    <form [formGroup]="event">
+      <div fxLayout='column' fxLayout.gt-xs='row' fxLayoutGap.gt-xs='20px'>
+        <mat-form-field floatLabel='always'>
+          <input matInput [matDatepicker]="picker" placeholder="Date" formControlName="timestamp">
+          <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+        <mat-form-field floatLabel='always'>
+          <mat-select placeholder="Type" formControlName="type">
+            <mat-option value='1'>Migraine</mat-option>
+            <mat-option value='2'>Headache</mat-option>
+            <mat-option value='3'>Doctor Visit</mat-option>
+            <mat-option value='4'>Bloodpressure</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <span *ngIf="event.get('type').touched && !event.get('type').valid">Type is mandatory</span>
+      </div>
+      <div fxLayout='row'>
+        <mat-form-field floatLabel='always' fxFlex='100' fxFlex.gt-xs='50'>
+          <textarea matInput placeholder="Notes" formControlName="comment"></textarea>
+        </mat-form-field>
+      </div>
+      <div fxLayout='row' fxLayoutGap="50px">
+        <button mat-raised-button color="primary" [disabled]='!event.valid' (click)="onSubmit()">Save</button>
+        <button mat-raised-button color="warn" [disabled]='!event.get("id").value' (click)="onDelete()">Delete</button>
+      </div>
+    </form>
+  </div>
+  <div fxLayout="column" fxFlex="100">
+    <div fxLayout="row" fxLayoutAlign="center center" fxLayoutGap="20px">
+      <button mat-raised-button color="primary" mwlCalendarPreviousView [view]="view" [(viewDate)]="viewDate" (viewDateChange)="onDateChanged()">
+        << Previous</button>
+          <h3>{{ viewDate | calendarDate:(view + 'ViewTitle'):'en' }}</h3>
+          <button mat-raised-button color="primary" mwlCalendarNextView [view]="view" [(viewDate)]="viewDate" (viewDateChange)="onDateChanged()">Next >></button>
+    </div>
+    <div fxLayout="column" fxFlex="100">
+      <mwl-calendar-month-view [viewDate]="viewDate" [cellTemplate]="customCellTemplate" weekStartsOn=1 [events]="events" (dayClicked)="onDayClicked($event)"
+        (eventClicked)="onEventClicked($event)">
+      </mwl-calendar-month-view>
+    </div>
+  </div>
+</div>
+
+<ng-template #customCellTemplate let-day="day" let-locale="locale">
+  <div class="cal-cell-top">
+    <span class="cal-day-number">{{ day.date | calendarDate:'monthViewDayNumber':locale }}</span>
+  </div>
+  <ng-container *ngFor="let event of day.events">
+    <small style="margin: 5px; padding: 8px;" [style.background-color]="event.color.secondary" [style.color]="event.color.primary"
+      fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="5px" (click)="onEventClicked($event, event)">
+      <img height="20" width="20" [src]="event.meta.icon" />
+      <span fxShow [fxShow.xs]="isVisible()" [fxShow.sm]="isVisible()">{{event.title}}</span>
+    </small>
+  </ng-container>
+</ng-template>

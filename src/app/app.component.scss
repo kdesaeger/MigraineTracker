@@ -1,0 +1,19 @@
+
+.main-container {
+    height: 100vh;
+
+    .header {
+        padding: 1em;
+        background-color: #e6f2ff;
+    }
+}
+
+.login-container {
+    height: 100vh;      
+    background-color: beige;
+
+    .login-failed {
+        color: red;
+        font-size: 1.1em;
+    }
+}
